@@ -1,0 +1,19 @@
+# Dependency directories
+node_modules/
+**/node_modules/
+
+# Production builds
+dist/
+**/dist/
+build/
+**/build/
+
+# Local fallback storage
+**/uploads/*
+!**/uploads/.gitkeep
+
+# Environment files (Crucial: Prevents API keys leak on GitHub)
+.env
+*.env
+**/.env
+.env*.local

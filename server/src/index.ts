@@ -102,7 +102,14 @@ app.get('/api/notifications', requireAuth, getNotifications);
 app.put('/api/notifications/:id/read', requireAuth, markNotificationRead);
 app.delete('/api/notifications', requireAuth, clearAllNotifications);
 
-// Health check
+// Root and Health Check
+app.get('/', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Quizio AI Backend is running 🚀'
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'quizio-backend' });
 });

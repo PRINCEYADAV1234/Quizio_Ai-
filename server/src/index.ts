@@ -107,9 +107,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'quizio-backend' });
 });
 
-// Start Server
-connectDB().then(() => {
+// Connect to Database
+connectDB();
+
+// Start Server locally if not running on Vercel
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
-});
+}
+
+export default app;

@@ -6,16 +6,15 @@ import {
   HelpCircle,
   BookOpen,
   BarChart3,
-  Bookmark,
   Bell,
   Settings,
   LogOut,
   Sun,
   Moon,
-  User,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/lib/authStore'
+import { getUserDisplayName, getUserInitial } from '@/lib/userDisplay'
 
 interface SidebarProps {
   userInitial?: string
@@ -25,10 +24,10 @@ interface SidebarProps {
 export function Sidebar({ userInitial: propInitial, userName: propName }: SidebarProps = {}) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { profile, logout } = useAuthStore()
+  const { profile, user, logout } = useAuthStore()
   
-  const userName = propName || profile?.name || 'Scholar'
-  const userInitial = propInitial || userName.charAt(0)
+  const userName = propName || getUserDisplayName(profile, user)
+  const userInitial = propInitial || getUserInitial(userName)
   const avatar = profile?.avatar
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {

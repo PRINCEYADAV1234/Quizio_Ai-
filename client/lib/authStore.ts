@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import axios from 'axios';
+import { reportApiAvailable, reportApiUnavailable } from './apiStatus';
+import { getBackendUrl } from './backendUrl';
 
 interface UserProfile {
   id: string;
@@ -31,7 +33,7 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = getBackendUrl();
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -55,20 +57,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
         {
           headers: { Authorization: `Bearer ${token}` },
+          timeout: 30000,
         }
       );
 
       // 2. Fetch User Profile and Analytics
       const profileRes = await axios.get(`${BACKEND_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000,
       });
 
+      reportApiAvailable();
       set({
         profile: profileRes.data.user,
         analytics: profileRes.data.analytics,
         token,
       });
     } catch (error) {
+      reportApiUnavailable('API NOT WORKING. Backend server is not responding. Login sync could not reach the API.');
       console.error('Failed to sync user with backend:', error);
     }
   },

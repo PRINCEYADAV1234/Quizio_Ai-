@@ -26,9 +26,9 @@ export const User = mongoose.model<IUser>('User', UserSchema);
 
 // ---------------- PDF SCHEMA ----------------
 export interface IPDF extends Document {
-  userId: string; // references User.firebaseUid or User._id (let's use firebaseUid consistently or _id. Let's use firebaseUid for queries speed)
+  userId: string;
   title: string;
-  fileUrl: string;
+  fileUrl?: string;  // no longer storing files — kept optional for backward compat
   summary?: string;
   totalPages: number;
   status: 'processing' | 'ready' | 'failed';
@@ -39,7 +39,7 @@ const PDFSchema: Schema = new Schema(
   {
     userId: { type: String, required: true, index: true },
     title: { type: String, required: true },
-    fileUrl: { type: String, required: true },
+    fileUrl: { type: String },          // optional — not stored anymore
     summary: { type: String },
     totalPages: { type: Number, default: 0 },
     status: { type: String, enum: ['processing', 'ready', 'failed'], default: 'processing' },
@@ -79,7 +79,7 @@ const QuestionSchema = new Schema({
 const QuizSchema: Schema = new Schema(
   {
     userId: { type: String, required: true, index: true },
-    pdfId: { type: String, required: true, index: true },
+    pdfId: { type: String, default: null, index: true }, // nullable — OCR quizzes have no PDF
     title: { type: String, required: true },
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
     quizType: { type: String, enum: ['mcq', 'extract_mcq', 'true_false', 'fill_in_the_blanks', 'short_answer'], default: 'mcq' },

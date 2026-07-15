@@ -105,6 +105,7 @@ export function PDFUploadPage() {
   const [uploading, setUploading] = useState(false)
   const [statusText, setStatusText] = useState('')
   const [progress, setProgress] = useState(0)
+  const [errorText, setErrorText] = useState('')
   
   // Quiz configuration states
   const [quizType, setQuizType] = useState('mcq')
@@ -117,6 +118,7 @@ export function PDFUploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
+      setErrorText('')
     }
   }
 
@@ -134,16 +136,11 @@ export function PDFUploadPage() {
     }
 
     setUploading(true)
-    setProgress(5)
-    setStatusText('Uploading PDF to Cloudinary...')
+    setErrorText('')
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev
-        const increment = Math.floor(Math.random() * 8) + 4
-        return Math.min(prev + increment, 90)
-      })
-    }, 1200)
+    // Step 1: Uploading file
+    setProgress(10)
+    setStatusText('Uploading PDF...')
 
     const formData = new FormData()
     formData.append('file', file)
@@ -153,30 +150,66 @@ export function PDFUploadPage() {
     formData.append('timeLimit', String(timeLimit))
     formData.append('negativeMarking', 'false')
 
+    // Step 2: Parsing text — update UI while request is in-flight
+    const stepTimer = setTimeout(() => {
+      setProgress(30)
+      setStatusText('Parsing PDF text content...')
+    }, 1500)
+
+    const summaryTimer = setTimeout(() => {
+      setProgress(55)
+      setStatusText('Generating AI summary & flashcards with Gemini 1.5 Flash...')
+    }, 4000)
+
+    const quizTimer = setTimeout(() => {
+      setProgress(80)
+      setStatusText('Synthesizing quiz questions...')
+    }, 10000)
+
     try {
-      setStatusText('Processing layout, parsing text, and synthesizing active recalls...')
       const res = await api.post('/api/pdfs/upload-and-generate-quiz', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 180000,
       })
-      
-      clearInterval(interval)
+
+      clearTimeout(stepTimer)
+      clearTimeout(summaryTimer)
+      clearTimeout(quizTimer)
+
       setProgress(100)
-      setStatusText('PDF uploaded and Quiz generated successfully! Redirecting...')
+      setStatusText('Quiz generated successfully! Redirecting...')
+
       const generatedQuiz = res.data.quiz
       setTimeout(() => {
         navigate(`/dashboard/quizzes/${generatedQuiz._id}`)
-      }, 1500)
+      }, 1200)
     } catch (err: any) {
+      clearTimeout(stepTimer)
+      clearTimeout(summaryTimer)
+      clearTimeout(quizTimer)
+
       console.error(err)
-      clearInterval(interval)
       setProgress(0)
-      setStatusText('Failed to upload PDF and generate quiz. Try again.')
       setUploading(false)
+
+      // Show the actual server error message to the user
+      const serverError = err?.response?.data?.error
+      setErrorText(serverError || 'Failed to upload PDF and generate quiz. Please try again.')
+      setStatusText('')
     }
   }
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
+      {errorText && (
+        <div className="p-4 rounded-xl border border-red-500/30 bg-red-950/80 text-red-100 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-extrabold text-xs uppercase tracking-wider">Error</p>
+            <p className="text-xs mt-1">{errorText}</p>
+          </div>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-serif font-black tracking-tight">Upload PDF & Generate Quiz</h1>
         <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">AI parses your layout outline, extracts text, and builds custom quizzes</p>
@@ -239,7 +272,7 @@ export function PDFUploadPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase">Question Count {quizType !== 'extract_mcq' && '(&gt; 3)'}</label>
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase">Question Count {quizType !== 'extract_mcq' && '(> 3)'}</label>
                   <input
                     type="number"
                     min="4"
@@ -252,7 +285,7 @@ export function PDFUploadPage() {
                 </div>
                 
                 <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase">Time Limit (mins &ge; 2)</label>
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase">Time Limit (mins ≥ 2)</label>
                   <input
                     type="number"
                     min="2"
@@ -272,17 +305,42 @@ export function PDFUploadPage() {
           )}
 
           {uploading && (
-            <div className="space-y-2 p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-              <div className="flex justify-between text-[10px] font-bold font-mono text-zinc-400">
-                <span className="flex items-center gap-1.5">
-                  <RefreshCw className="w-3 h-3 animate-spin text-amber-500" />
-                  {statusText}
-                </span>
-                <span>{progress}%</span>
+            <div className="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              {/* Step indicators synced to real processing stages */}
+              <div className="space-y-1.5">
+                {[
+                  { label: 'Uploading PDF', done: progress >= 10 },
+                  { label: 'Parsing text content', done: progress >= 30 },
+                  { label: 'Generating AI summary & flashcards', done: progress >= 55 },
+                  { label: 'Synthesizing quiz questions', done: progress >= 80 },
+                  { label: 'Saving to database', done: progress >= 100 },
+                ].map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className={`w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold transition-all ${
+                      step.done
+                        ? 'bg-amber-500 text-zinc-950'
+                        : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400'
+                    }`}>
+                      {step.done ? '✓' : idx + 1}
+                    </span>
+                    <span className={`text-[10px] font-semibold transition-colors ${
+                      step.done ? 'text-zinc-700 dark:text-zinc-200' : 'text-zinc-400'
+                    }`}>
+                      {step.label}
+                    </span>
+                  </div>
+                ))}
               </div>
               <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+                <div
+                  className="h-full bg-amber-500 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
+              <p className="text-[10px] font-mono text-zinc-400 flex items-center gap-1.5">
+                <RefreshCw className="w-3 h-3 animate-spin text-amber-500" />
+                {statusText}
+              </p>
             </div>
           )}
 
@@ -536,6 +594,7 @@ export function QuizCreatePage() {
   const [timeLimit, setTimeLimit] = useState(10)
   const [negativeMarking, setNegativeMarking] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [geminiKeyError, setGeminiKeyError] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -554,6 +613,7 @@ export function QuizCreatePage() {
     if (!selectedPdfId) return
 
     setGenerating(true)
+    setGeminiKeyError(false)
     try {
       const res = await api.post('/api/quizzes/generate', {
         pdfId: selectedPdfId,
@@ -562,8 +622,19 @@ export function QuizCreatePage() {
         questionCount,
         timeLimit,
         negativeMarking,
+      }, {
+        timeout: 120000,
       })
-      navigate(`/dashboard/quizzes/${res.data._id}`)
+      
+      if (res.data.geminiKeyError) {
+        setGeminiKeyError(true)
+        setGenerating(false)
+        setTimeout(() => {
+          navigate(`/dashboard/quizzes/${res.data._id}`)
+        }, 5000)
+      } else {
+        navigate(`/dashboard/quizzes/${res.data._id}`)
+      }
     } catch (err) {
       console.error(err)
       setGenerating(false)
@@ -572,6 +643,17 @@ export function QuizCreatePage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
+      {geminiKeyError && (
+        <div className="p-4 rounded-xl border border-red-500/30 bg-red-950 text-red-100 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-extrabold text-xs uppercase tracking-wider">GEMINI API KEY NOT WORKING</p>
+            <p className="text-xs mt-1">
+              Your GEMINI_API_KEY environment variable is invalid or missing. The quiz was created using fallback mock questions.
+            </p>
+          </div>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-serif font-black tracking-tight">Configure Active Practice</h1>
         <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">AI synthesizes custom questions matching your choices</p>

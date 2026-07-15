@@ -8,12 +8,14 @@ import {
 import { useAuthStore } from '@/lib/authStore'
 import api from '@/lib/api'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { getUserDisplayName } from '@/lib/userDisplay'
 
 export default function DashboardPage() {
-  const { profile, analytics } = useAuthStore()
+  const { profile, analytics, user } = useAuthStore()
   const [recentPdfs, setRecentPdfs] = useState<any[]>([])
   const [attempts, setAttempts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const userName = getUserDisplayName(profile, user)
 
   useEffect(() => {
     Promise.all([
@@ -40,7 +42,7 @@ export default function DashboardPage() {
         <div>
           <span className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">System Operational</span>
           <h1 className="text-2xl md:text-3xl font-serif font-black tracking-tight mt-1">
-            Good to see you, {profile?.name || 'Scholar'} 👋
+            Good to see you, {userName} 👋
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-lg leading-relaxed font-semibold">
             Upload notes, textbooks or slides to instantly generate customizable quizzes, summaries and interactive flashcards.

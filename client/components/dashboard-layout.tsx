@@ -3,10 +3,12 @@ import { Sidebar } from './sidebar'
 import { useAuthStore } from '@/lib/authStore'
 import { Bell, Search, Menu, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { getUserDisplayName, getUserInitial } from '@/lib/userDisplay'
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { profile } = useAuthStore()
+  const { profile, user } = useAuthStore()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const userName = getUserDisplayName(profile, user)
 
   // Determine greeting based on local time
   const getGreeting = () => {
@@ -48,7 +50,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
             <div className="hidden sm:flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
               <span className="font-serif font-bold text-zinc-800 dark:text-zinc-200 text-base">
-                {getGreeting()}, {profile?.name || 'Scholar'} 👋
+                {getGreeting()}, {userName} 👋
               </span>
             </div>
           </div>
@@ -75,7 +77,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <img src={profile.avatar} alt="Profile" className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-800" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center font-bold text-xs text-zinc-950 font-mono">
-                  {profile?.name?.charAt(0).toUpperCase() || 'S'}
+                  {getUserInitial(userName)}
                 </div>
               )}
             </Link>

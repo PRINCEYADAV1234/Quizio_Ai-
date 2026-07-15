@@ -1,6 +1,7 @@
-import React, { Suspense, lazy, useEffect } from 'react'
+  import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ApiStatusBanner } from './components/api-status-banner'
+import { Toaster } from 'react-hot-toast'
 
 const LandingPage = lazy(() => import('./app/page'))
 const LoginPage = lazy(() => import('./app/login/page'))
@@ -27,8 +28,6 @@ const QuizResultPage = lazyDashboardPage('QuizResultPage')
 const QuizHistoryPage = lazyDashboardPage('QuizHistoryPage')
 const FlashcardsPage = lazyDashboardPage('FlashcardsPage')
 const FlashcardsStudyPage = lazyDashboardPage('FlashcardsStudyPage')
-const SummariesPage = lazyDashboardPage('SummariesPage')
-const SummaryDetailsPage = lazyDashboardPage('SummaryDetailsPage')
 const AnalyticsPage = lazyDashboardPage('AnalyticsPage')
 const ProfilePage = lazyDashboardPage('ProfilePage')
 const SettingsPage = lazyDashboardPage('SettingsPage')
@@ -166,22 +165,7 @@ export default function App() {
               </DashboardRoute>
             }
           />
-          <Route
-            path="/dashboard/summaries"
-            element={
-              <DashboardRoute>
-                <SummariesPage />
-              </DashboardRoute>
-            }
-          />
-          <Route
-            path="/dashboard/summaries/:id"
-            element={
-              <DashboardRoute>
-                <SummaryDetailsPage />
-              </DashboardRoute>
-            }
-          />
+          {/* Note: Summaries routes removed */}
           <Route
             path="/dashboard/analytics"
             element={
@@ -216,6 +200,7 @@ export default function App() {
           />
         </Routes>
       </Suspense>
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
     </BrowserRouter>
   )
 }

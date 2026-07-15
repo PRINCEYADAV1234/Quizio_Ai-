@@ -62,7 +62,6 @@ export function Sidebar({ userInitial: propInitial, userName: propName }: Sideba
     { icon: FileText, label: 'PDF Library', href: '/dashboard/pdfs' },
     { icon: HelpCircle, label: 'Quizzes', href: '/dashboard/quizzes' },
     { icon: BookOpen, label: 'Flashcards', href: '/dashboard/flashcards' },
-    { icon: FileText, label: 'Summaries', href: '/dashboard/summaries' },
     { icon: BarChart3, label: 'Analytics', href: '/dashboard/analytics' },
     { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
     { icon: Settings, label: 'Settings', href: '/dashboard/settings' },

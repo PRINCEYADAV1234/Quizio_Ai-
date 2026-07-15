@@ -45,7 +45,7 @@ export default function DashboardPage() {
             Good to see you, {userName} 👋
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-lg leading-relaxed font-semibold">
-            Upload notes, textbooks or slides to instantly generate customizable quizzes, summaries and interactive flashcards.
+            Upload notes, textbooks or slides to instantly generate customizable quizzes and interactive flashcards.
           </p>
         </div>
         <Link to="/dashboard/pdfs/upload">

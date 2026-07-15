@@ -3,8 +3,8 @@
 Quizio AI is a state-of-the-art web application designed to optimize learning parameters using active recall and automated content synthesis. By utilizing Google's Gemini models and Cloudinary document processing, Quizio AI extracts structured concepts, generates dynamic quizzes (MCQs, True/False, Blank Fills, Short Answers), and produces interactive flashcard decks and executive summaries.
 
 ---
-
-## 🚀 Key Features
+    
+##  Key Features
 
 * **Intelligent PDF Sync:** Upload articles, slides, or notes. If Cloudinary is configured, files are automatically synced online; otherwise, local files fallback ensures zero execution breaks.
 * **Structured Concept Extraction:** Extracts raw MCQs directly from uploaded PDFs or synthesizes new ones based on text analysis.
@@ -33,7 +33,7 @@ Quizio AI is a state-of-the-art web application designed to optimize learning pa
 
 ---
 
-## 📂 Folder Structure
+##  Folder Structure
 
 ```
 quiz-genius-ai/
@@ -57,7 +57,7 @@ quiz-genius-ai/
 
 ---
 
-## 🚀 Installation & Local Run
+##  Installation & Local Run
 
 ### Prerequisites
 * Node.js (v18+)
@@ -88,7 +88,7 @@ npm run dev
 
 ---
 
-## 💡 What I Learned
+##  What I Learned
 
 * **Model Optimization & Prompt Design:** Structuring Gemini model prompt instructions to output rigid JSON conforming to Mongoose schemas.
 * **Failover Fallbacks:** Developing robust Multer/Express fallbacks to guarantee PDF upload workflows succeed locally even during Cloudinary API interruptions.

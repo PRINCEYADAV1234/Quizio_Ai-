@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import api from '@/lib/api'
 import { useAuthStore } from '@/lib/authStore'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import toast from 'react-hot-toast'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 // ==========================================
 // 1. PDF LIBRARY PAGE
@@ -16,6 +18,8 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 export function PDFsPage() {
   const [pdfs, setPdfs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     api.get('/api/pdfs')
@@ -25,17 +29,31 @@ export function PDFsPage() {
   }, [])
 
   const handleClearAll = async () => {
-    if (!window.confirm("Are you sure you want to clear all PDFs, summaries, and flashcards?")) return
+    setClearing(true)
     try {
       await api.delete('/api/pdfs')
       setPdfs([])
-    } catch (err) {
+      toast.success("All PDFs and flashcards cleared successfully!")
+    } catch (err: any) {
       console.error(err)
+      toast.error(err?.response?.data?.error || "Failed to clear documents.")
+    } finally {
+      setClearing(false)
+      setConfirmOpen(false)
     }
   }
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleClearAll}
+        loading={clearing}
+        title="Clear Library"
+        message="Are you sure you want to clear all PDFs and flashcards? This action is permanent."
+      />
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif font-black tracking-tight">Your PDF Library</h1>
@@ -43,7 +61,7 @@ export function PDFsPage() {
         </div>
         <div className="flex gap-3">
           {pdfs.length > 0 && (
-            <Button onClick={handleClearAll} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg flex items-center gap-2">
+            <Button onClick={() => setConfirmOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg flex items-center gap-2">
               Clear All
             </Button>
           )}
@@ -440,59 +458,53 @@ export function PDFDetailsPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  if (loading) return <div className="text-center font-mono">Loading details...</div>
-  if (!pdf) return <div className="text-center font-mono">PDF not found</div>
+  if (loading) return <div className="text-center font-mono py-12">Loading details...</div>
+  if (!pdf) return <div className="text-center font-mono py-12">PDF not found</div>
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-serif font-black tracking-tight">{pdf.title}</h1>
-          <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">AI analysis summary and study portals</p>
-        </div>
-        <Link to={`/dashboard/quizzes/create?pdfId=${pdf._id}`}>
-          <Button className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold rounded-lg">
-            Generate Quiz
-          </Button>
-        </Link>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <div>
+        <h1 className="text-2xl font-serif font-black tracking-tight">{pdf.title}</h1>
+        <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider mt-1">
+          Pages: {pdf.totalPages} • Ready for revision
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Summary Card */}
-        <div className="lg:col-span-2 p-6 bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm space-y-4">
-          <h3 className="font-serif font-black text-lg text-zinc-800 dark:text-zinc-100 border-b pb-2 border-zinc-100 dark:border-zinc-850">
-            Document Summary
-          </h3>
-          <div className="space-y-2">
-            {pdf.summary ? renderMarkdown(pdf.summary) : 'Summary not found'}
-          </div>
+      <div className="p-8 bg-white dark:bg-[#0c0c0e]/80 border border-zinc-200/80 dark:border-zinc-800/60 rounded-2xl shadow-sm space-y-6 text-center">
+        <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto">
+          <FileText className="w-7 h-7 text-amber-500" />
+        </div>
+        <div className="max-w-md mx-auto">
+          <h3 className="font-serif font-bold text-lg">AI Revision Hub</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium">
+            Your document has been analyzed. Select a study portal below to test your active recall.
+          </p>
         </div>
 
-        {/* Portals */}
-        <div className="space-y-6">
-          <div className="p-6 bg-white dark:bg-[#0c0c0e] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm space-y-4">
-            <h4 className="font-bold text-sm">Study Portals</h4>
-            <div className="space-y-3">
-              <Link to={`/dashboard/flashcards/${pdf._id}`} className="block p-3 rounded-xl border border-zinc-150 dark:border-zinc-850 hover:border-amber-500/50 transition">
-                <div className="flex items-center gap-3">
-                  <BookOpen className="w-5 h-5 text-amber-500" />
-                  <div>
-                    <p className="text-xs font-bold">Interactive Flashcards</p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">Revise core terminology</p>
-                  </div>
-                </div>
-              </Link>
-              <Link to={`/dashboard/summaries/${pdf._id}`} className="block p-3 rounded-xl border border-zinc-150 dark:border-zinc-850 hover:border-amber-500/50 transition">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-amber-500" />
-                  <div>
-                    <p className="text-xs font-bold">Comprehensive Summary</p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">Dedicated revision page</p>
-                  </div>
-                </div>
-              </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto pt-4">
+          <Link to={`/dashboard/flashcards/${pdf._id}`} className="block p-6 rounded-2xl border border-zinc-200 dark:border-zinc-850 hover:border-amber-500/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 transition text-left space-y-3">
+            <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-amber-500" />
             </div>
-          </div>
+            <div>
+              <h4 className="font-bold text-sm">Interactive Flashcards</h4>
+              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-1 font-semibold leading-relaxed">
+                Revise core definitions and formulas flip by flip.
+              </p>
+            </div>
+          </Link>
+
+          <Link to={`/dashboard/quizzes/create?pdfId=${pdf._id}`} className="block p-6 rounded-2xl border border-zinc-200 dark:border-zinc-850 hover:border-amber-500/50 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 transition text-left space-y-3">
+            <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+              <Brain className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm">Generate Custom Quiz</h4>
+              <p className="text-[10px] text-zinc-450 dark:text-zinc-500 mt-1 font-semibold leading-relaxed">
+                Practice with MCQs, True/False, or Fill in the Blanks.
+              </p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
@@ -505,6 +517,8 @@ export function PDFDetailsPage() {
 export function QuizzesPage() {
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     api.get('/api/quizzes')
@@ -514,17 +528,31 @@ export function QuizzesPage() {
   }, [])
 
   const handleClearAll = async () => {
-    if (!window.confirm("Are you sure you want to clear all quizzes and attempts?")) return
+    setClearing(true)
     try {
       await api.delete('/api/quizzes')
       setQuizzes([])
-    } catch (err) {
+      toast.success("All quizzes and attempts cleared successfully!")
+    } catch (err: any) {
       console.error(err)
+      toast.error(err?.response?.data?.error || "Failed to clear quizzes.")
+    } finally {
+      setClearing(false)
+      setConfirmOpen(false)
     }
   }
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleClearAll}
+        loading={clearing}
+        title="Clear Quizzes"
+        message="Are you sure you want to clear all quizzes and attempts? This action is permanent."
+      />
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif font-black tracking-tight">AI Generated Quizzes</h1>
@@ -532,7 +560,7 @@ export function QuizzesPage() {
         </div>
         <div className="flex gap-3">
           {quizzes.length > 0 && (
-            <Button onClick={handleClearAll} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg flex items-center gap-2">
+            <Button onClick={() => setConfirmOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg flex items-center gap-2">
               Clear All
             </Button>
           )}
@@ -1127,6 +1155,8 @@ export function QuizHistoryPage() {
 export function FlashcardsPage() {
   const [pdfs, setPdfs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     api.get('/api/pdfs')
@@ -1136,24 +1166,38 @@ export function FlashcardsPage() {
   }, [])
 
   const handleClearAll = async () => {
-    if (!window.confirm("Are you sure you want to clear all flashcards?")) return
+    setClearing(true)
     try {
       await api.delete('/api/pdfs')
       setPdfs([])
-    } catch (err) {
+      toast.success("All flashcards cleared successfully!")
+    } catch (err: any) {
       console.error(err)
+      toast.error(err?.response?.data?.error || "Failed to clear flashcards.")
+    } finally {
+      setClearing(false)
+      setConfirmOpen(false)
     }
   }
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleClearAll}
+        loading={clearing}
+        title="Clear Flashcards"
+        message="Are you sure you want to clear all flashcards? This action is permanent."
+      />
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif font-black tracking-tight">Interactive Flashcards</h1>
           <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Choose a document to start revisions</p>
         </div>
         {pdfs.length > 0 && (
-          <Button onClick={handleClearAll} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg">
+          <Button onClick={() => setConfirmOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg">
             Clear All
           </Button>
         )}
@@ -1544,6 +1588,8 @@ export function BookmarksPage() {
 // ==========================================
 export function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     api.get('/api/notifications')
@@ -1552,24 +1598,38 @@ export function NotificationsPage() {
   }, [])
 
   const handleClearAll = async () => {
-    if (!window.confirm("Are you sure you want to clear all notifications?")) return
+    setClearing(true)
     try {
       await api.delete('/api/notifications')
       setNotifications([])
-    } catch (err) {
+      toast.success("All notifications cleared successfully!")
+    } catch (err: any) {
       console.error(err)
+      toast.error(err?.response?.data?.error || "Failed to clear notifications.")
+    } finally {
+      setClearing(false)
+      setConfirmOpen(false)
     }
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleClearAll}
+        loading={clearing}
+        title="Clear Notifications"
+        message="Are you sure you want to clear all notifications? This action is permanent."
+      />
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-serif font-black tracking-tight">Notifications Feed</h1>
           <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Recent study events and system reports</p>
         </div>
         {notifications.length > 0 && (
-          <Button onClick={handleClearAll} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg">
+          <Button onClick={() => setConfirmOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg">
             Clear All
           </Button>
         )}

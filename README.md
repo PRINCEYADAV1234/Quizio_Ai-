@@ -1,4 +1,10 @@
-# Quizio AI - AI-Powered Active Recall and Quiz Generation System
+Name : Yadav Prince 
+Endrollment No : 240163116036
+Semester: 7th sem
+Collage : Government Engineering COllage, Modasa
+
+
+# About Project : Quizio AI - AI-Powered Active Recall and Quiz Generation System
 
 Quizio AI is a state-of-the-art web application designed to optimize learning parameters using active recall and automated content synthesis. By utilizing Google's Gemini models and Cloudinary document processing, Quizio AI extracts structured concepts, generates dynamic quizzes (MCQs, True/False, Blank Fills, Short Answers), and produces interactive flashcard decks and executive summaries.
 

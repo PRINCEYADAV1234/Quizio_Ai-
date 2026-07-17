@@ -3,6 +3,10 @@ Endrollment No : 240163116036
 Semester: 7th sem
 Collage : Government Engineering COllage, Modasa
 
+# video Explanation Link : 
+
+
+
 
 # About Project : Quizio AI - AI-Powered Active Recall and Quiz Generation System
 

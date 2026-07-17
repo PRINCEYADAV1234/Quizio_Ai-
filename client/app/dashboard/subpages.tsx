@@ -157,7 +157,7 @@ export function PDFUploadPage() {
     setErrorText('')
 
     // Step 1: Uploading file
-    setProgress(10)
+    setProgress(0)
     setStatusText('Uploading PDF...')
 
     const formData = new FormData()
@@ -168,43 +168,49 @@ export function PDFUploadPage() {
     formData.append('timeLimit', String(timeLimit))
     formData.append('negativeMarking', 'false')
 
-    // Step 2: Parsing text — update UI while request is in-flight
-    const stepTimer = setTimeout(() => {
-      setProgress(30)
-      setStatusText('Parsing PDF text content...')
-    }, 1500)
-
-    const summaryTimer = setTimeout(() => {
-      setProgress(55)
-      setStatusText('Generating AI summary & flashcards with Gemini 1.5 Flash...')
-    }, 4000)
-
-    const quizTimer = setTimeout(() => {
-      setProgress(80)
-      setStatusText('Synthesizing quiz questions...')
-    }, 10000)
+    let progressInterval: any = null;
 
     try {
       const res = await api.post('/api/pdfs/upload-and-generate-quiz', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 180000,
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            const uploadProgress = Math.min(Math.round(percentCompleted * 0.4), 40);
+            setProgress(uploadProgress);
+            setStatusText(`Uploading PDF (${percentCompleted}%)...`);
+
+            if (percentCompleted === 100 && !progressInterval) {
+              setStatusText('Processing PDF on server...');
+              let currentProgress = 40;
+              progressInterval = setInterval(() => {
+                if (currentProgress < 95) {
+                  currentProgress += 1;
+                  setProgress(currentProgress);
+                  if (currentProgress < 55) {
+                    setStatusText('Parsing PDF text content...');
+                  } else if (currentProgress < 80) {
+                    setStatusText('Generating AI flashcards & quiz with Gemini...');
+                  } else {
+                    setStatusText('Synthesizing quiz questions...');
+                  }
+                }
+              }, 250);
+            }
+          }
+        }
       })
 
-      clearTimeout(stepTimer)
-      clearTimeout(summaryTimer)
-      clearTimeout(quizTimer)
+      if (progressInterval) clearInterval(progressInterval)
 
       setProgress(100)
       setStatusText('Quiz generated successfully! Redirecting...')
 
       const generatedQuiz = res.data.quiz
-      setTimeout(() => {
-        navigate(`/dashboard/quizzes/${generatedQuiz._id}`)
-      }, 1200)
+      navigate(`/dashboard/quizzes/${generatedQuiz._id}`)
     } catch (err: any) {
-      clearTimeout(stepTimer)
-      clearTimeout(summaryTimer)
-      clearTimeout(quizTimer)
+      if (progressInterval) clearInterval(progressInterval)
 
       console.error(err)
       setProgress(0)

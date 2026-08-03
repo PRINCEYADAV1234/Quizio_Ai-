@@ -6,7 +6,7 @@ const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 
-const MODEL = 'gemini-3.5-flash';
+const MODEL = 'gemini-3.6-flash';
 const MAX_RETRIES = 3;
 
 // Max chars to send as input — increased to 150,000 to read the full PDF content
